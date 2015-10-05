@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += qml quick
+QT += qml quick sql core
 CONFIG += c++11
 
 include(../src/libQDeviceWatcher.pri)

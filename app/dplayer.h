@@ -11,6 +11,9 @@
 #include <QtCore/QThread>
 #include "qdevicewatcher.h"
 
+#include <QtSql>
+#include <QDir>
+
 #ifndef __GNUC__
 #define __PRETTY_FUNCTION__  __FUNCTION__
 #endif

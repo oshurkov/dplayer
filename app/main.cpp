@@ -2,7 +2,11 @@
 
 #include "dplayer.h"
 
-
+#ifdef WIN32
+    QString separator = QDir::toNativeSeparators(QDir::separator());
+#else
+    QString separator = QDir::toNativeSeparators(QDir::separator());
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +20,27 @@ int main(int argc, char *argv[])
 
     watcherTxtDrive chekUSB;
     chekUSB.txtDrive = object->findChild<QObject*>("txtDrive");
+
+
+
+    QString pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
+    qDebug() << pathDBfile;
+
+    if (!QDir(pathDBfile).exists()){
+        qDebug() << "path programm not exists! Create...";
+        QDir().mkdir(pathDBfile);
+    }
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(pathDBfile + separator + "dbplayer.db");
+
+    if ( !db.open() )
+    {
+        QString message = db.lastError().text();
+        qDebug() << "DB error: " << message;
+    }
+
+    db.close();
 
     return app.exec();
 }
