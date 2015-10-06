@@ -2,7 +2,7 @@
 
 #include "dplayer.h"
 
-#ifdef WIN32
+#ifdef Q_OS_WIN
     QString separator = QDir::toNativeSeparators(QDir::separator());
 #else
     QString separator = QDir::toNativeSeparators(QDir::separator());
@@ -25,17 +25,7 @@ int main(int argc, char *argv[])
     QFileInfoList drivers = QDir::drives();
     QFileInfo videoDrive; //наш диск, с которым будем работать
     foreach (QFileInfo drive, drivers) {
-        if (DRIVE_REMOVABLE == GetDriveType((wchar_t *)drive.absoluteFilePath().utf16())) {
-            QString pathDEVfile = QDir::toNativeSeparators(drive.absoluteFilePath()) + ".devinfo";
-            if (QFileInfo(pathDEVfile).exists()){
-                videoDrive = drive;
-                chekUSB.slotDeviceAdded( QDir::toNativeSeparators(videoDrive.absoluteFilePath()));
-                qDebug() << "detect VIDEOREGISTRATOR in drive " << QDir::toNativeSeparators(drive.absoluteFilePath());
-            }
-        }
-    }
-    if (!videoDrive.exists()) {
-        qDebug() << "removable drive not found";
+                chekUSB.slotDeviceAdded(drive.absoluteFilePath());
     }
 /* просканировали... */
 
@@ -78,9 +68,14 @@ watcherTxtDrive::watcherTxtDrive(QQmlEngine *parent) :
 
 void watcherTxtDrive::slotDeviceAdded(const QString &dev)
 {
-    if (txtDrive)
-        txtDrive->setProperty("text", dev);
-
+    if (DRIVE_REMOVABLE == GetDriveType((wchar_t *)dev.utf16())) {
+        QString pathDEVfile = QDir::toNativeSeparators(dev) + ".devinfo";
+        if (QFileInfo(pathDEVfile).exists()){
+            if (txtDrive)
+                txtDrive->setProperty("text", dev);
+            qDebug() << "detect VIDEOREGISTRATOR in drive " << dev;
+        }
+    }
 }
 
 void watcherTxtDrive::slotDeviceRemoved(const QString &dev)
