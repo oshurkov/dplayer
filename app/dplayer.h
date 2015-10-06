@@ -18,7 +18,7 @@
 #define __PRETTY_FUNCTION__  __FUNCTION__
 #endif
 
-
+#include <qt_windows.h>
 
 class watcherTxtDrive : public QQmlEngine
 {

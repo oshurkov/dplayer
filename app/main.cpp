@@ -21,8 +21,23 @@ int main(int argc, char *argv[])
     watcherTxtDrive chekUSB;
     chekUSB.txtDrive = object->findChild<QObject*>("txtDrive");
 
+/* нужно просканировать наличие УЖЕ подключенных съемных дисков WIN32*/
+    QFileInfoList drivers = QDir::drives();
+    QFileInfo videoDrive; //наш диск, с которым будем работать
+    foreach (QFileInfo drive, drivers) {
+        if (DRIVE_REMOVABLE == GetDriveType((wchar_t *)drive.absoluteFilePath().utf16())) {
+            qDebug() << "detect drive removable - " << drive.absoluteFilePath();
+            videoDrive = drive;
+            chekUSB.slotDeviceAdded( QDir::toNativeSeparators(videoDrive.absoluteFilePath()));
+        }
+    }
+    if (!videoDrive.exists()) {
+        qDebug() << "removable drive not found";
+    }
+/* просканировали... */
 
 
+/* работа с SQLite и файлом-конфига */
     QString pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
     qDebug() << pathDBfile;
 
@@ -41,6 +56,7 @@ int main(int argc, char *argv[])
     }
 
     db.close();
+/* конец SQLite и файла конфига */
 
     return app.exec();
 }
