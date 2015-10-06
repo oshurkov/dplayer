@@ -26,9 +26,12 @@ int main(int argc, char *argv[])
     QFileInfo videoDrive; //наш диск, с которым будем работать
     foreach (QFileInfo drive, drivers) {
         if (DRIVE_REMOVABLE == GetDriveType((wchar_t *)drive.absoluteFilePath().utf16())) {
-            qDebug() << "detect drive removable - " << drive.absoluteFilePath();
-            videoDrive = drive;
-            chekUSB.slotDeviceAdded( QDir::toNativeSeparators(videoDrive.absoluteFilePath()));
+            QString pathDEVfile = QDir::toNativeSeparators(drive.absoluteFilePath()) + ".devinfo";
+            if (QFileInfo(pathDEVfile).exists()){
+                videoDrive = drive;
+                chekUSB.slotDeviceAdded( QDir::toNativeSeparators(videoDrive.absoluteFilePath()));
+                qDebug() << "detect VIDEOREGISTRATOR in drive " << QDir::toNativeSeparators(drive.absoluteFilePath());
+            }
         }
     }
     if (!videoDrive.exists()) {
@@ -75,14 +78,14 @@ watcherTxtDrive::watcherTxtDrive(QQmlEngine *parent) :
 
 void watcherTxtDrive::slotDeviceAdded(const QString &dev)
 {
-    if ( txtDrive)
+    if (txtDrive)
         txtDrive->setProperty("text", dev);
 
 }
 
 void watcherTxtDrive::slotDeviceRemoved(const QString &dev)
 {
-    if ( txtDrive)
+    if (txtDrive)
         txtDrive->setProperty("text", "no usb disk");
 }
 
