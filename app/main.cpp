@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
     }
 /* конец SQLite и файла конфига */
 
+
     db.close(); //закроем подключение к базе
     return app.exec();
 }
@@ -106,8 +107,21 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev)
         QString pathDEVfile = QDir::toNativeSeparators(dev) + ".devinfo";
         if (QFileInfo(pathDEVfile).exists()){
             if (txtDrive)
-                txtDrive->setProperty("text", dev);
-            qDebug() << "detect VIDEOREGISTRATOR in drive " << dev;
+                txtDrive->setProperty("text", QDir::toNativeSeparators(dev));
+            qDebug() << "detect VIDEOREGISTRATOR in drive " << QDir::toNativeSeparators(dev);
+            /* сканируем файлы на флэшке */
+                //if (chekUSB.txtDrive->property("text").toString() != "no usb disk") {
+                    QString srcDirMove = QDir::toNativeSeparators(dev) + "DCIM";
+                    QStringList listDir = QDir(srcDirMove,"*VIDEO",QDir::Name | QDir::IgnoreCase,QDir::Dirs | QDir::NoDotAndDotDot).entryList();
+                    foreach (QString subdir, listDir) {
+                        qDebug() << srcDirMove + separator + subdir;
+                        QFileInfoList listFile = QDir(srcDirMove + separator + subdir,"*.MP4",QDir::Name | QDir::IgnoreCase,QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
+                        foreach (QFileInfo subfile, listFile) {
+                            qDebug() << subfile.created().toString("yyyy.MM.dd HH:mm:ss") + " | " + subfile.fileName();
+                        }
+                    }
+                //}
+            /* просканировали */
         }
     }
 }
