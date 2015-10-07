@@ -8,6 +8,8 @@
     QString separator = QDir::toNativeSeparators(QDir::separator());
 #endif
 
+    QString pathDBfile;
+
 int main(int argc, char *argv[])
 {
 
@@ -21,16 +23,8 @@ int main(int argc, char *argv[])
     watcherTxtDrive chekUSB;
     chekUSB.txtDrive = object->findChild<QObject*>("txtDrive");
 
-/* нужно просканировать наличие УЖЕ подключенных съемных дисков WIN32*/
-    QFileInfoList drivers = QDir::drives();
-    foreach (QFileInfo drive, drivers) {
-                chekUSB.slotDeviceAdded(drive.absoluteFilePath());
-    }
-/* просканировали... */
-
-
 /* работа с SQLite и файлом-конфига */
-    QString pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
+    pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
 
     if (!QDir(pathDBfile).exists()){
         qDebug() << "path programm not exists! Create...";
@@ -84,6 +78,12 @@ int main(int argc, char *argv[])
     }
 /* конец SQLite и файла конфига */
 
+/* нужно просканировать наличие УЖЕ подключенных съемных дисков WIN32*/
+    QFileInfoList drivers = QDir::drives();
+    foreach (QFileInfo drive, drivers) {
+        chekUSB.slotDeviceAdded(drive.absoluteFilePath());
+    }
+/* просканировали... */
 
     db.close(); //закроем подключение к базе
     return app.exec();
@@ -118,6 +118,19 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev)
                         QFileInfoList listFile = QDir(srcDirMove + separator + subdir,"*.MP4",QDir::Name | QDir::IgnoreCase,QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
                         foreach (QFileInfo subfile, listFile) {
                             qDebug() << subfile.created().toString("yyyy.MM.dd HH:mm:ss") + " | " + subfile.fileName();
+                            QString month = subfile.created().toString("MM");
+                            QString year = subfile.created().toString("yyyy");
+                            if (!QDir(pathDBfile + separator + year).exists()){
+                                qDebug() << "year folder " + year + " create...";
+                                QDir().mkdir(pathDBfile + separator + year);
+                            }
+                            if (!QDir(pathDBfile + separator + year + separator + month).exists()){
+                                qDebug() << "month folder " + month + " in " + year + " year folder create...";
+                                QDir().mkdir(pathDBfile + separator + year + separator + month);
+                            }
+                            if (!QFile::copy(subfile.absoluteFilePath(), pathDBfile + separator + year + separator + month + separator + subfile.created().toString("yyyyMMddHHmmss") + "_" + subfile.fileName() )) {
+                                qDebug() << "file copy " + subfile.absoluteFilePath() + " failed";
+                            }
                         }
                     }
                 //}
