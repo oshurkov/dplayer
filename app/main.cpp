@@ -23,7 +23,6 @@ int main(int argc, char *argv[])
 
 /* нужно просканировать наличие УЖЕ подключенных съемных дисков WIN32*/
     QFileInfoList drivers = QDir::drives();
-    QFileInfo videoDrive; //наш диск, с которым будем работать
     foreach (QFileInfo drive, drivers) {
                 chekUSB.slotDeviceAdded(drive.absoluteFilePath());
     }
@@ -32,7 +31,6 @@ int main(int argc, char *argv[])
 
 /* работа с SQLite и файлом-конфига */
     QString pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
-    qDebug() << pathDBfile;
 
     if (!QDir(pathDBfile).exists()){
         qDebug() << "path programm not exists! Create...";
@@ -48,9 +46,45 @@ int main(int argc, char *argv[])
         qDebug() << "DB error: " << message;
     }
 
-    db.close();
+    QSqlQuery a_query;
+    int result = 0;
+
+    //Создаем таблицы, если уже они существуют - пропускаем этот шаг
+    if (!a_query.exec("select count(1) result from sqlite_master where type = 'table' and name in ('file','conf')")) {
+        QString message = db.lastError().text();
+        qDebug() << "DB check tables error: " << message;
+    }
+    if (a_query.next()) {
+        QSqlRecord rec = a_query.record();
+        result = a_query.value(rec.indexOf("result")).toInt();
+    }
+
+    if (!result) {
+        // DDL...
+        QString str = "CREATE TABLE file ("
+                "id integer PRIMARY KEY AUTOINCREMENT NOT NULL, "
+                "name VARCHAR(255), "
+             "create_date DATETIME"
+             ");";
+        bool b = a_query.exec(str);
+        if (!b) {
+            QString message = db.lastError().text();
+            qDebug() << "DB Create table [file] error: " << message;
+        }
+
+        str = "CREATE TABLE conf ("
+                "name VARCHAR(255) PRIMARY KEY NOT NULL, "
+                "value VARCHAR(255) "
+             ");";
+        b = a_query.exec(str);
+        if (!b) {
+            QString message = db.lastError().text();
+            qDebug() << "DB Create table [file] error: " << message;
+        }
+    }
 /* конец SQLite и файла конфига */
 
+    db.close(); //закроем подключение к базе
     return app.exec();
 }
 
