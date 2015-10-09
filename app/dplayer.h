@@ -26,15 +26,34 @@ class watcherTxtDrive : public QQmlEngine
 public:
     explicit watcherTxtDrive(QQmlEngine *parent = 0);
     QObject *txtDrive;
+    QObject *txtMemo;
 
 public slots:
    void slotDeviceAdded(const QString& dev);
    void slotDeviceRemoved(const QString& dev);
-
+   void msg(QString msg);
 
 private:
     QDeviceWatcher *watcher;
 
+};
+
+class Worker : public QObject {
+    Q_OBJECT
+
+public:
+    Worker(const QString& devinit);
+    virtual ~Worker();
+
+public slots:
+    void process();
+
+signals:
+    void finished();
+    void msg(QString msg);
+
+private:
+    QString dev;
 };
 
 #endif // DPLAYER
