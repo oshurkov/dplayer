@@ -9,6 +9,7 @@
 #endif
 
     QString pathDBfile;
+    QSqlDatabase db;
 
 int main(int argc, char *argv[])
 {
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
         QDir().mkdir(pathDBfile);
     }
 
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db = QSqlDatabase::addDatabase("QSQLITE");
     db.setDatabaseName(pathDBfile + separator + "dbplayer.db");
 
     if ( !db.open() )
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
         qDebug() << "DB error: " << message;
     }
 
-    QSqlQuery a_query;
+    QSqlQuery a_query(db);
     int result = 0;
 
     //Создаем таблицы, если уже они существуют - пропускаем этот шаг
@@ -120,6 +121,22 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev)
                             qDebug() << subfile.created().toString("yyyy.MM.dd HH:mm:ss") + " | " + subfile.fileName();
                             QString month = subfile.created().toString("MM");
                             QString year = subfile.created().toString("yyyy");
+
+                            QSqlQuery a_query(db);
+                            int result = 0;
+
+                            //Создаем таблицы, если уже они существуют - пропускаем этот шаг
+                            if (!a_query.exec("select count(1) result from file where name = '" + year + separator + month + separator + subfile.created().toString("yyyyMMddHHmmss") + "_" + subfile.fileName() + "'")) {
+                                QString message = db.lastError().text();
+                                qDebug() << "DB find file error: " << message;
+                            }
+                            if (a_query.next()) {
+                                QSqlRecord rec = a_query.record();
+                                result = a_query.value(rec.indexOf("result")).toInt();
+                            }
+
+                            if (!result) {
+
                             if (!QDir(pathDBfile + separator + year).exists()){
                                 qDebug() << "year folder " + year + " create...";
                                 QDir().mkdir(pathDBfile + separator + year);
@@ -128,8 +145,16 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev)
                                 qDebug() << "month folder " + month + " in " + year + " year folder create...";
                                 QDir().mkdir(pathDBfile + separator + year + separator + month);
                             }
-                            if (!QFile::copy(subfile.absoluteFilePath(), pathDBfile + separator + year + separator + month + separator + subfile.created().toString("yyyyMMddHHmmss") + "_" + subfile.fileName() )) {
+                            if (QFile::copy(subfile.absoluteFilePath(), pathDBfile + separator + year + separator + month + separator + subfile.created().toString("yyyyMMddHHmmss") + "_" + subfile.fileName() )) {
+                                a_query.prepare("INSERT INTO file (name, create_date)"
+                                                              "VALUES (:name, :create_date);");
+                                a_query.bindValue(":name", year + separator + month + separator + subfile.created().toString("yyyyMMddHHmmss") + "_" + subfile.fileName());
+                                a_query.bindValue(":create_date", subfile.created().toTime_t());
+                                a_query.exec();
+                            } else {
                                 qDebug() << "file copy " + subfile.absoluteFilePath() + " failed";
+                            }
+
                             }
                         }
                     }
