@@ -10,7 +10,8 @@ QString pathDBfile;
 QSqlDatabase db;
 QQmlContext *mainContext;
 
-int main(int argc, char * argv[]){
+int main(int argc, char *argv[])
+{
     /* первым делом создадим директорию для работы нашей проги */
     pathDBfile = QDir::toNativeSeparators(QDir::homePath()) + separator + ".dplayer";
 
@@ -25,22 +26,22 @@ int main(int argc, char * argv[]){
     if (!db.open()) {
         QString message = db.lastError().text();
         qDebug() << "DB error: " << message;
-    }
+    } else { qDebug() << "open DB"; }
     QSqlQuery a_query(db);
     QString str = "CREATE TABLE IF NOT EXISTS file ("
-        "id integer PRIMARY KEY AUTOINCREMENT NOT NULL, "
-        "name VARCHAR(255), "
-        "create_date DATETIME"
-        ");";
+              "id integer PRIMARY KEY AUTOINCREMENT NOT NULL, "
+              "name VARCHAR(255), "
+              "create_date DATETIME"
+              ");";
     bool b = a_query.exec(str);
     if (!b) {
         QString message = db.lastError().text();
         qDebug() << "DB Create table [file] error: " << message;
     }
     str = "CREATE TABLE IF NOT EXISTS conf ("
-        "name VARCHAR(255) PRIMARY KEY NOT NULL, "
-        "value VARCHAR(255) "
-        ");";
+          "name VARCHAR(255) PRIMARY KEY NOT NULL, "
+          "value VARCHAR(255) "
+          ");";
     b = a_query.exec(str);
     if (!b) {
         QString message = db.lastError().text();
@@ -48,16 +49,14 @@ int main(int argc, char * argv[]){
     }
 
     //вытащим список файлов
-    QList<QObject*> dataList;
+    QList<QObject *> dataList;
     QSqlQuery query("SELECT id, name, create_date FROM file");
-    while (query.next()) {
+    while (query.next())
         dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
-    }
-    if (dataList.empty()) {
-        dataList.append(new TableFile(0,"Нет файлов",0));
-    }
-
-    db.close();     // закроем подключение к базе
+    if (dataList.empty())
+        dataList.append(new TableFile(0, "Нет файлов", 0));
+    qDebug() << "close DB";
+    db.close(); // закроем подключение к базе
     /* конец создания таблиц */
 
     /* инициализируем гуи */
@@ -68,7 +67,7 @@ int main(int argc, char * argv[]){
     QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
 
     /* маппим объекты GML с нашими классами */
-    QObject * object = component.create();
+    QObject *object = component.create();
     watcherTxtDrive chekUSB;
     chekUSB.txtDrive = object->findChild<QObject *>("txtDrive");
     chekUSB.txtMemo = object->findChild<QObject *>("txtMemo");
@@ -84,8 +83,9 @@ int main(int argc, char * argv[]){
 } // main
 
 
-watcherTxtDrive::watcherTxtDrive(QQmlEngine * parent) :
-    QQmlEngine(parent){
+watcherTxtDrive::watcherTxtDrive(QQmlEngine *parent) :
+    QQmlEngine(parent)
+{
     watcher = new QDeviceWatcher;
     watcher->appendEventReceiver(this);
     connect(watcher, SIGNAL(deviceAdded(QString)), this, SLOT(slotDeviceAdded(QString)), Qt::DirectConnection);
@@ -94,7 +94,8 @@ watcherTxtDrive::watcherTxtDrive(QQmlEngine * parent) :
 }
 
 
-void watcherTxtDrive::slotDeviceAdded(const QString &dev){
+void watcherTxtDrive::slotDeviceAdded(const QString &dev)
+{
     if (DRIVE_REMOVABLE == GetDriveType((wchar_t *)dev.utf16())) {
         QString pathDEVfile = QDir::toNativeSeparators(dev) + ".devinfo";
         if (QFileInfo(pathDEVfile).exists()) {
@@ -103,8 +104,8 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev){
             qDebug() << "detect VIDEOREGISTRATOR in drive " << QDir::toNativeSeparators(dev);
 
             // запускаем доп.поток для копирования в фоне от основного процесса
-            QThread * thread = new QThread;
-            Worker * worker = new Worker(dev);
+            QThread *thread = new QThread;
+            Worker *worker = new Worker(dev);
             worker->moveToThread(thread);
             connect(worker, SIGNAL(msg(QString)), this, SLOT(msg(QString)));
             connect(thread, SIGNAL(started()), worker, SLOT(process()));
@@ -116,51 +117,60 @@ void watcherTxtDrive::slotDeviceAdded(const QString &dev){
     }
 } // watcherTxtDrive::slotDeviceAdded
 
-void watcherTxtDrive::slotDeviceRemoved(const QString &dev){
+void watcherTxtDrive::slotDeviceRemoved(const QString &dev)
+{
     if (txtDrive)
         txtDrive->setProperty("text", "no usb disk");
 }
 
-void watcherTxtDrive::msg(QString msg){
+void watcherTxtDrive::msg(QString msg)
+{
     if (txtMemo) {
         txtMemo->setProperty("text", msg);
 
-        QList<QObject*> dataList;
-
-        if (!db.open()) {
-            QString message = db.lastError().text();
-            qDebug() << "DB error: " << message;
+        QList<QObject *> dataList;
+        bool flagdb = true; //если база открыта, то не закрывать, т.к. она глобальна для всех и вся
+        if (!db.isOpen()) {
+            flagdb = false;
+            if (!db.open()) {
+                QString message = db.lastError().text();
+                qDebug() << "DB error: " << message;
+            } else { qDebug() << "open DB"; }
         }
         QSqlQuery query("SELECT id, name, create_date FROM file");
-        while (query.next()) {
+        while (query.next())
             dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
-        }
         mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
-        db.close();
+        if (!flagdb) {
+            qDebug() << "close DB";
+            db.close();
+        }
     }
 }
 
 // --- CONSTRUCTOR ---
-Worker::Worker(const QString& devinit){
+Worker::Worker(const QString& devinit)
+{
     // you could copy data from constructor arguments to internal variables here.
     dev = devinit;
 }
 
 // --- DECONSTRUCTOR ---
-Worker::~Worker(){
+Worker::~Worker()
+{
     // free resources
     qDebug() << "Thread for sync " << QDir::toNativeSeparators(dev) << " finished.";
 }
 
 // --- PROCESS ---
 // Start processing data.
-void Worker::process(){
-    // allocate resources using new here
-
+void Worker::process()
+{
+    //обычно в отдельном потоке надо переоткрывать БД???
     if (!db.open()) {
         QString message = db.lastError().text();
         qDebug() << "DB error: " << message;
-    }
+    } else { qDebug() << "open DB"; }
 
     /* сканируем файлы на флэшке */
 
@@ -207,7 +217,7 @@ void Worker::process(){
 
                 if (QFile::copy(subfile.absoluteFilePath(), pathDBfile + separator + toFile)) {
                     a_query.prepare("INSERT INTO file (name, create_date)"
-                                    "VALUES (:name, :create_date);");
+                            "VALUES (:name, :create_date);");
                     a_query.bindValue(":name", toFile);
                     a_query.bindValue(":create_date", subfile.created().toTime_t());
                     a_query.exec();
@@ -219,6 +229,7 @@ void Worker::process(){
     }
     /* просканировали */
     emit msg("Sync files from device complete.");
+    qDebug() << "close DB";
     db.close();
 
     emit finished();
