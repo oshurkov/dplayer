@@ -46,6 +46,17 @@ int main(int argc, char * argv[]){
         QString message = db.lastError().text();
         qDebug() << "DB Create table [file] error: " << message;
     }
+
+    //вытащим список файлов
+    QList<QObject*> dataList;
+    QSqlQuery query("SELECT id, name, create_date FROM file");
+    while (query.next()) {
+        dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
+    }
+    if (dataList.empty()) {
+        dataList.append(new TableFile(0,"Нет файлов",0));
+    }
+
     db.close();     // закроем подключение к базе
     /* конец создания таблиц */
 
@@ -53,6 +64,7 @@ int main(int argc, char * argv[]){
     QGuiApplication app(argc, argv);
     QQmlEngine engine;
     mainContext = engine.rootContext();
+    mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
     QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
 
     /* маппим объекты GML с нашими классами */
@@ -124,6 +136,7 @@ void watcherTxtDrive::msg(QString msg){
             dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
         }
         mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
+        db.close();
     }
 }
 

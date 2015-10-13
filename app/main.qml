@@ -23,6 +23,7 @@ Window {
         property alias txtMemo: txtMemo
 
         ListView {
+            id: listview
             width: 250; height: 100
             anchors.right: parent.right
             y: 100
@@ -33,10 +34,7 @@ Window {
             }
             highlight: Rectangle {
                 color: "lightsteelblue"
-                radius: 3
-                border.width: 1
-                border.color: "grey"
-                anchors.right: parent.right
+                x: listview.currentItem.x
             }
             focus: true
         }
