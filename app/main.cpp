@@ -1,5 +1,3 @@
-/* test */
-
 #include "dplayer.h"
 
 #ifdef Q_OS_WIN
@@ -10,7 +8,7 @@ QString separator = QDir::toNativeSeparators(QDir::separator());
 
 QString pathDBfile;
 QSqlDatabase db;
-
+QQmlContext *mainContext;
 
 int main(int argc, char * argv[]){
     /* первым делом создадим директорию для работы нашей проги */
@@ -54,17 +52,8 @@ int main(int argc, char * argv[]){
     /* инициализируем гуи */
     QGuiApplication app(argc, argv);
     QQmlEngine engine;
-
-    QStringList dataList;
-    dataList.append("Item 1");
-    dataList.append("Item 2");
-    dataList.append("Item 3");
-    dataList.append("Item 4");
-    //QQmlContext *ctxt = engine.rootContext();
-    engine.rootContext()->setContextProperty("myModel", QVariant::fromValue(dataList));
-
+    mainContext = engine.rootContext();
     QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
-
 
     /* маппим объекты GML с нашими классами */
     QObject * object = component.create();
@@ -121,8 +110,21 @@ void watcherTxtDrive::slotDeviceRemoved(const QString &dev){
 }
 
 void watcherTxtDrive::msg(QString msg){
-    if (txtMemo)
+    if (txtMemo) {
         txtMemo->setProperty("text", msg);
+
+        QList<QObject*> dataList;
+
+        if (!db.open()) {
+            QString message = db.lastError().text();
+            qDebug() << "DB error: " << message;
+        }
+        QSqlQuery query("SELECT id, name, create_date FROM file");
+        while (query.next()) {
+            dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
+        }
+        mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
+    }
 }
 
 // --- CONSTRUCTOR ---
@@ -208,3 +210,23 @@ void Worker::process(){
 
     emit finished();
 } // Worker::process
+
+TableFile::TableFile(const int &id, const QString &name, const uint &utime)
+    : m_id(id), m_name(name), m_utime(utime)
+{
+}
+
+int TableFile::id() const
+{
+    return m_id;
+}
+
+QString TableFile::name() const
+{
+    return m_name;
+}
+
+uint TableFile::utime() const
+{
+    return m_utime;
+}

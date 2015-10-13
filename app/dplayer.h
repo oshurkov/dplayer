@@ -9,10 +9,6 @@
 
 #include <QStringList>
 #include <QQmlContext>
-//#include <qqml.h>
-//#include <QtQuick/qquickitem.h>
-//#include <QtQuick/qquickview.h>
-
 
 #include <QtCore/QObject>
 #include <QtCore/QThread>
@@ -22,34 +18,35 @@
 #include <QDir>
 
 #ifndef __GNUC__
-#define __PRETTY_FUNCTION__  __FUNCTION__
+#define __PRETTY_FUNCTION__ __FUNCTION__
 #endif
 
 #include <qt_windows.h>
 
+// Класс для событий УСБ-устройств
 class watcherTxtDrive : public QQmlEngine
 {
     Q_OBJECT
-public:
+    public:
     explicit watcherTxtDrive(QQmlEngine *parent = 0);
     QObject *txtDrive;
     QObject *txtMemo;
 
 public slots:
-   void slotDeviceAdded(const QString& dev);
-   void slotDeviceRemoved(const QString& dev);
-   void msg(QString msg);
+    void slotDeviceAdded(const QString& dev);
+    void slotDeviceRemoved(const QString& dev);
+    void msg(QString msg);
 
 private:
     QDeviceWatcher *watcher;
-
 };
 
+// Класс для потоков
 class Worker : public QObject {
     Q_OBJECT
 
 public:
-    Worker(const QString& devinit);
+Worker(const QString& devinit);
     virtual ~Worker();
 
 public slots:
@@ -63,5 +60,28 @@ private:
     QString dev;
 };
 
-#endif // DPLAYER
+// Класс для передачи модели в QML-ный ListView
+class TableFile : public QObject
+{
+    Q_OBJECT
+    Q_PROPERTY(int id READ id)
+    Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+    Q_PROPERTY(uint utime READ utime)
 
+public:
+    TableFile(const int &id, const QString &name, const uint &utime);
+
+    int id() const;
+    QString name() const;
+    uint utime() const;
+
+signals:
+    void nameChanged();
+
+private:
+    int m_id;
+    QString m_name;
+    uint m_utime;
+};
+
+#endif // DPLAYER
