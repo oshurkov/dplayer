@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
     watcherTxtDrive chekUSB;
     chekUSB.txtDrive = object->findChild<QObject *>("txtDrive");
     chekUSB.txtMemo = object->findChild<QObject *>("txtMemo");
+    mainContext->setContextProperty("_chekUSB", &chekUSB);
 
     /* нужно просканировать наличие УЖЕ подключенных съемных дисков WIN32*/
     QFileInfoList drivers = QDir::drives();
@@ -128,22 +129,13 @@ void watcherTxtDrive::msg(QString msg)
     if (txtMemo) {
         txtMemo->setProperty("text", msg);
 
-        QList<QObject *> dataList;
-        bool flagdb = true; //если база открыта, то не закрывать, т.к. она глобальна для всех и вся
-        if (!db.isOpen()) {
-            flagdb = false;
-            if (!db.open()) {
-                QString message = db.lastError().text();
-                qDebug() << "DB error: " << message;
-            } else { qDebug() << "open DB"; }
-        }
-        QSqlQuery query("SELECT id, name, create_date FROM file");
-        while (query.next())
-            dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
-        mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
-        if (!flagdb) {
-            qDebug() << "close DB";
-            db.close();
+        //если база открыта, то обновим список файлов
+        if (db.isOpen()) {
+            QList<QObject *> dataList;
+            QSqlQuery query("SELECT id, name, create_date FROM file");
+            while (query.next())
+                dataList.append(new TableFile(query.value(0).toInt(), query.value(1).toString(), query.value(2).toUInt()));
+            mainContext->setContextProperty("myModel", QVariant::fromValue(dataList));
         }
     }
 }

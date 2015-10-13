@@ -28,9 +28,24 @@ Window {
             anchors.right: parent.right
             y: 100
             model: myModel
-            delegate: Text {
-                    text: name
-                    anchors.right: parent.right
+            delegate: Component {
+                Item {
+                    width: parent.width
+                    height: 25
+                    Column {
+                        Text {
+                            text: name
+                            anchors.right: parent.right
+                        }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            listview.currentIndex = index
+                            _chekUSB.msg(name)
+                        }
+                    }
+                }
             }
             highlight: Rectangle {
                 color: "lightsteelblue"
