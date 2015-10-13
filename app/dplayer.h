@@ -7,6 +7,13 @@
 #include <QQmlComponent>
 #include <QString>
 
+#include <QStringList>
+#include <QQmlContext>
+//#include <qqml.h>
+//#include <QtQuick/qquickitem.h>
+//#include <QtQuick/qquickview.h>
+
+
 #include <QtCore/QObject>
 #include <QtCore/QThread>
 #include "qdevicewatcher.h"

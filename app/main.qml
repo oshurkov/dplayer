@@ -6,9 +6,6 @@ Window {
 
     MainForm {
         anchors.fill: parent
-        mouseArea.onClicked: {
-        //txtDrive.text = "Drive"
-        }
     }
-}
 
+}
